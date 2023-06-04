@@ -1,0 +1,7 @@
+﻿Country Code,Region,IncomeGroup,SpecialNotes,TableName,CountryLat,CountryLong,Language,HasInternationalAirport,Area,Currency,CurrencyInUSDollars,HurricaneCount
+ATG,Latin America & Caribbean,High income,,Antigua and Barbuda,17.060816,-61.796428,English,Yes,108,East Caribbean Dollar (EC),0.37,13
+DMA,Latin America & Caribbean,Upper middle income,,Dominica,15.414999,-61.370976,English/French Creole,No,290,East Caribbean Dollar (EC),0.37,5
+HTI,Latin America & Caribbean,Lower middle income,"The reporting period for national accounts data is designated as either calendar year basis (CY) or fiscal year basis (FY). For this country, it is fiscal year-based (fiscal year-end: September 30). Also, an estimate (PA.NUS.ATLS) of the exchange rate covers the same period and thus differs from the official exchange rate (CY).",Haiti,18.971187,-72.285215,English/French Creole,Yes,10450,Haitian Gourde,0.0069,4
+JAM,Latin America & Caribbean,Upper middle income,,Jamaica,18.109581,-77.297508,English,Yes,4240,Jamaican Dollar,0.0065,11
+LCA,Latin America & Caribbean,Upper middle income,,St. Lucia,13.909444,-60.978893,English/French Creole,Yes,238,East Caribbean Dollar (EC),0.37,1
+TTO,Latin America & Caribbean,High income,,Trinidad and Tobago,10.691803,-61.222503,English,Yes,1981,Trinidad and Tobago Dollar,0.15,1

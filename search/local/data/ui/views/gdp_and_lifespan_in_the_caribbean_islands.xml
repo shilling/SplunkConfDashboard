@@ -1,0 +1,347 @@
+<form version="1.1" script="html_input.js" theme="dark">
+  <label>Visualizing Health and Wealth in the Caribbean Islands at Splunk .conf 2023 (Las Vegas)</label>
+  <fieldset submitButton="true" autoRun="false">
+    <html>
+            <label>Year</label>
+            <input type="range" id="slider_input" value="1960" min="1960" max="2022" step="1"/>
+        </html>
+    <input type="multiselect" token="country_code">
+      <label>Countries</label>
+      <choice value="*">All</choice>
+      <fieldForLabel>country_name</fieldForLabel>
+      <fieldForValue>country_code</fieldForValue>
+      <search>
+        <query>| inputlookup country_lookup | table "Country Code", TableName | rename "Country Code" as country_code, TableName as country_name</query>
+      </search>
+      <prefix>(</prefix>
+      <suffix>)</suffix>
+      <valuePrefix>country_code="</valuePrefix>
+      <valueSuffix>"</valueSuffix>
+      <delimiter> OR </delimiter>
+    </input>
+    <input type="dropdown" token="indicator_code">
+      <label>Indicator #1</label>
+      <fieldForLabel>indicator_name</fieldForLabel>
+      <fieldForValue>indicator_code</fieldForValue>
+      <search>
+        <query>index="worldbankdata"   | stats count by indicator_code | lookup indicator_lookup INDICATOR_CODE AS indicator_code OUTPUTNEW INDICATOR_NAME AS indicator_name</query>
+        <earliest>0</earliest>
+        <latest></latest>
+      </search>
+    </input>
+    <input type="dropdown" token="indicator_code2">
+      <label>Indicator #2</label>
+      <fieldForLabel>indicator_name</fieldForLabel>
+      <fieldForValue>indicator_code</fieldForValue>
+      <search>
+        <query>index="worldbankdata"   | stats count by indicator_code | lookup indicator_lookup INDICATOR_CODE AS indicator_code OUTPUTNEW INDICATOR_NAME AS indicator_name</query>
+        <earliest>0</earliest>
+        <latest></latest>
+      </search>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Showing results for $indicator_code$ (x-axis), $indicator_code2$ (y-axis) and population (bubble size) for year=$slider_value$.</title>
+      <chart>
+        <search>
+          <query>index="worldbankdata"  earliest=0 sourcetype="islandstats" indicator_code=$indicator_code$ year=$slider_value$ $country_code$
+| stats sum(value) as "$indicator_code$" by year, country_code
+| join country_code, year [| search index="worldbankdata"  sourcetype="islandstats" $country_code$ indicator_code=$indicator_code2$ year=$slider_value$ 
+| stats sum(value) as "$indicator_code2$" by year, country_code ]
+| join country_code, year [| search index="worldbankdata"  sourcetype="islandstats" $country_code$ indicator_code="SP.POP.TOTL" year=$slider_value$ 
+| stats sum(value) as "Population" by year, country_code ]
+| lookup country_lookup "Country Code" AS country_code OUTPUTNEW TableName AS country_name
+| stats sum("$indicator_code$") as "$indicator_code$" sum("$indicator_code2$") as "$indicator_code2$" sum(Population) as Population by year, country_name</query>
+          <earliest>0</earliest>
+          <latest></latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">bubble</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">all</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <drilldown>
+          <set token="selected_country_code">$click.value2$</set>
+        </drilldown>
+      </chart>
+    </panel>
+    <panel><html><center><h1 style="color:green;font-size:50px;">$slider_value$</h1></center></html>
+      <!--single>
+        <search>
+          <query>| makeresults | eval Year=$slider_value$</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="unitPosition">before</option>
+        <option name="useThousandSeparators">0</option>
+      </single-->
+      <html>
+        <center>
+      <img src="/static/app/search/images/$selected_country_code$.png"/>
+      <!--img src="/static/app/search/images/$selected_country_code$2.png"></img-->
+      <!--img src="/static/app/search/images/$selected_country_code$3.png"/>
+      <img src="/static/app/search/images/$selected_country_code$4.png"/-->
+      </center>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Showing results for $selected_country_code$  $indicator_code$ from 1960-2021</title>
+      <chart>
+        <search>
+          <query>index="worldbankdata"  earliest=0 sourcetype="islandstats" indicator_code=$indicator_code$ year&lt;2022
+| eval TableName="$selected_country_code$"
+| lookup country_lookup TableName OUTPUT "Country Code" as selected_country_code 
+| eventstats avg(value) as Average by year
+| where country_code=selected_country_code
+| stats sum(value) as $indicator_code$ values(Average) as Average by year</query>
+          <earliest>0</earliest>
+          <latest></latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">-90</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Showing results for $selected_country_code$ $indicator_code2$ from 1960-2021</title>
+      <chart>
+        <search>
+          <query>index="worldbankdata"  earliest=0 sourcetype="islandstats" indicator_code=$indicator_code2$ year&lt;2022
+| eval TableName="$selected_country_code$"
+| lookup country_lookup TableName OUTPUT "Country Code" as selected_country_code 
+| eventstats avg(value) as Average by year
+| where country_code=selected_country_code
+| stats sum(value) as $indicator_code2$ values(Average) as Average by year</query>
+          <earliest>0</earliest>
+          <latest></latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Disasters in $selected_country_code$ in $slider_value$.</title>
+      <table>
+        <title>Hurricanes in $selected_country_code$ in $slider_value$.</title>
+        <search>
+          <query>| inputlookup hurricanes.csv
+| rex field=classification "h(?&lt;category&gt;\d)"
+| eval category=if(classification="ts",0.5, category)
+| eval stormstrength=category*(1/cpoa)
+| search Country=$selected_country_code$ Year=$slider_value$</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+      <table>
+        <title>Earthquakes in $selected_country_code$ in $slider_value$.</title>
+        <search>
+          <query>| inputlookup earthquakes.csv
+| search Country=$selected_country_code$ year=$slider_value$</query>
+          <earliest>0</earliest>
+          <latest></latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">100</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Ask ChatGPT about $selected_country_code$.</title>
+      <table>
+        <search>
+          <query>|openai org="org-KDit7Pt5jh3eHLJcJbzu6rCr" prompt="Tell me about "."$selected_country_code$"." in ".$slider_value$ 
+| spath input=openai_response
+| table choices{}.message.content
+| rename choices{}.message.content as "ChatGPT Results"</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Mapping the islands (Legend: World Bank Income Group Classification - High income (green), High middle income (orange), Lower middle income (red)). Click on the island marker to see more information.</title>
+      <viz type="leaflet_maps_app.maps-plus">
+        <search>
+          <query>index="worldbankdata"  earliest=0 sourcetype="islandstats" indicator_code=$indicator_code$ year=$slider_value$ 
+| stats sum(value) as "$indicator_code$" by year, country_code
+| join country_code, year [| search index="worldbankdata"  sourcetype="islandstats" indicator_code=$indicator_code2$ year=$slider_value$ 
+| stats sum(value) as "$indicator_code2$" by year, country_code ]
+| join country_code, year [| search index="worldbankdata"  sourcetype="islandstats" indicator_code="SP.POP.TOTL" year=$slider_value$ 
+| stats sum(value) as "Population" by year, country_code ]
+| lookup country_lookup "Country Code" as country_code OUTPUTNEW TableName AS country_name,IncomeGroup, CountryLong as longitude, CountryLat as latitude, Language, HasInternationalAirport, Area, Currency, CurrencyInUSDollars
+| lookup HDI country_code OUTPUT HDI_Rank_2021
+| stats sum("$indicator_code$") as "$indicator_code$" sum("$indicator_code2$") as "$indicator_code2$" sum(Population) as Population values(longitude) as longitude, values(latitude) as latitude values(Language) as Language, values(HasInternationalAirport) as HasInternationalAirport, values(Area) as Area, values(Currency) as Currency values(CurrencyInUSDollars) as CurrencyInUSDollars values(IncomeGroup) as IncomeGroup values(HDI_Rank_2021) as HDI by year, country_name
+| eval markerColor=case(IncomeGroup="High income", "green", IncomeGroup="Upper middle income", "orange", IncomeGroup="Lower middle income", "red", 1=1,"blue")
+| eval description = "&lt;b&gt;World Bank Category: &lt;/b&gt;".IncomeGroup."&lt;br&gt;&lt;b&gt;Human Development Rank: &lt;/b&gt;".HDI."&lt;br&gt;&lt;b&gt;Population: &lt;/b&gt;".Population."&lt;br&gt;&lt;b&gt;Area: &lt;/b&gt;".Area." sq. miles &lt;br&gt;
+&lt;b&gt;International Airport: &lt;/b&gt;".HasInternationalAirport."&lt;br&gt;&lt;b&gt;Currency: &lt;/b&gt;".Currency."&lt;br&gt;&lt;b&gt;Currency Conversion in US Dollars: &lt;/b&gt;".CurrencyInUSDollars."&lt;br&gt;&lt;/b&gt;" 
+| table latitude, longitude, description, markerColor</query>
+          <earliest>0</earliest>
+          <latest></latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">all</option>
+        <option name="leaflet_maps_app.maps-plus.allPopups">0</option>
+        <option name="leaflet_maps_app.maps-plus.animate">1</option>
+        <option name="leaflet_maps_app.maps-plus.autoFitAndZoom">0</option>
+        <option name="leaflet_maps_app.maps-plus.autoFitAndZoomDelay">500</option>
+        <option name="leaflet_maps_app.maps-plus.bingMaps">0</option>
+        <option name="leaflet_maps_app.maps-plus.bingMapsLabelLanguage">en-US</option>
+        <option name="leaflet_maps_app.maps-plus.bingMapsTileLayer">CanvasLight</option>
+        <option name="leaflet_maps_app.maps-plus.cluster">0</option>
+        <option name="leaflet_maps_app.maps-plus.contextMenu">1</option>
+        <option name="leaflet_maps_app.maps-plus.criticalThreshold">80</option>
+        <option name="leaflet_maps_app.maps-plus.defaultHeight">600</option>
+        <option name="leaflet_maps_app.maps-plus.disableClusteringAtZoom">0</option>
+        <option name="leaflet_maps_app.maps-plus.drilldown">0</option>
+        <option name="leaflet_maps_app.maps-plus.drilldownAction">dblclick</option>
+        <option name="leaflet_maps_app.maps-plus.fullScreen">0</option>
+        <option name="leaflet_maps_app.maps-plus.googlePlacesPosition">topleft</option>
+        <option name="leaflet_maps_app.maps-plus.googlePlacesSearch">0</option>
+        <option name="leaflet_maps_app.maps-plus.googlePlacesZoomLevel">12</option>
+        <option name="leaflet_maps_app.maps-plus.heatmapBlur">15</option>
+        <option name="leaflet_maps_app.maps-plus.heatmapColorGradient">{"0.4":"red","0.6":"cyan","0.7":"lime","0.8":"yellow","1":"red"}</option>
+        <option name="leaflet_maps_app.maps-plus.heatmapEnable">0</option>
+        <option name="leaflet_maps_app.maps-plus.heatmapMinOpacity">1.0</option>
+        <option name="leaflet_maps_app.maps-plus.heatmapOnly">0</option>
+        <option name="leaflet_maps_app.maps-plus.heatmapRadius">25</option>
+        <option name="leaflet_maps_app.maps-plus.i18nLanguage">en</option>
+        <option name="leaflet_maps_app.maps-plus.layerControl">1</option>
+        <option name="leaflet_maps_app.maps-plus.layerControlCollapsed">1</option>
+        <option name="leaflet_maps_app.maps-plus.mapCenterLat">15</option>
+        <option name="leaflet_maps_app.maps-plus.mapCenterLon">-65</option>
+        <option name="leaflet_maps_app.maps-plus.mapCenterZoom">6</option>
+        <option name="leaflet_maps_app.maps-plus.mapTile">http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png</option>
+        <option name="leaflet_maps_app.maps-plus.maxClusterRadius">80</option>
+        <option name="leaflet_maps_app.maps-plus.maxSpiderfySize">100</option>
+        <option name="leaflet_maps_app.maps-plus.maxZoom">6</option>
+        <option name="leaflet_maps_app.maps-plus.measureActiveColor">#00ff00</option>
+        <option name="leaflet_maps_app.maps-plus.measureCompletedColor">#0066ff</option>
+        <option name="leaflet_maps_app.maps-plus.measureIconPosition">topright</option>
+        <option name="leaflet_maps_app.maps-plus.measureLocalization">en</option>
+        <option name="leaflet_maps_app.maps-plus.measurePrimaryAreaUnit">acres</option>
+        <option name="leaflet_maps_app.maps-plus.measurePrimaryLengthUnit">feet</option>
+        <option name="leaflet_maps_app.maps-plus.measureSecondaryAreaUnit">sqmiles</option>
+        <option name="leaflet_maps_app.maps-plus.measureSecondaryLengthUnit">miles</option>
+        <option name="leaflet_maps_app.maps-plus.measureTool">1</option>
+        <option name="leaflet_maps_app.maps-plus.minZoom">1</option>
+        <option name="leaflet_maps_app.maps-plus.multiplePopups">0</option>
+        <option name="leaflet_maps_app.maps-plus.pathColorList">#0003F0,#D43C29,darkgreen,0xe2d400,darkred,#23A378</option>
+        <option name="leaflet_maps_app.maps-plus.pathSplitInterval">60</option>
+        <option name="leaflet_maps_app.maps-plus.pathSplits">0</option>
+        <option name="leaflet_maps_app.maps-plus.permanentTooltip">0</option>
+        <option name="leaflet_maps_app.maps-plus.playbackSpeed">100</option>
+        <option name="leaflet_maps_app.maps-plus.playbackTickLength">50</option>
+        <option name="leaflet_maps_app.maps-plus.rangeOneBgColor">#B5E28C</option>
+        <option name="leaflet_maps_app.maps-plus.rangeOneFgColor">#6ECC39</option>
+        <option name="leaflet_maps_app.maps-plus.rangeThreeBgColor">#FD9C73</option>
+        <option name="leaflet_maps_app.maps-plus.rangeThreeFgColor">#F18017</option>
+        <option name="leaflet_maps_app.maps-plus.rangeTwoBgColor">#F1D357</option>
+        <option name="leaflet_maps_app.maps-plus.rangeTwoFgColor">#F0C20C</option>
+        <option name="leaflet_maps_app.maps-plus.refreshInterval">0</option>
+        <option name="leaflet_maps_app.maps-plus.renderer">svg</option>
+        <option name="leaflet_maps_app.maps-plus.scrollWheelZoom">0</option>
+        <option name="leaflet_maps_app.maps-plus.showPathLines">0</option>
+        <option name="leaflet_maps_app.maps-plus.showPlayback">0</option>
+        <option name="leaflet_maps_app.maps-plus.showPlaybackDateControl">1</option>
+        <option name="leaflet_maps_app.maps-plus.showPlaybackPlayControl">1</option>
+        <option name="leaflet_maps_app.maps-plus.showPlaybackSliderControl">1</option>
+        <option name="leaflet_maps_app.maps-plus.showProgress">1</option>
+        <option name="leaflet_maps_app.maps-plus.singleMarkerMode">0</option>
+        <option name="leaflet_maps_app.maps-plus.spiderfyDistanceMultiplier">1</option>
+        <option name="leaflet_maps_app.maps-plus.splunkVersionCheck">1</option>
+        <option name="leaflet_maps_app.maps-plus.stickyTooltip">1</option>
+        <option name="leaflet_maps_app.maps-plus.warningThreshold">55</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </viz>
+    </panel>
+  </row>
+</form>
