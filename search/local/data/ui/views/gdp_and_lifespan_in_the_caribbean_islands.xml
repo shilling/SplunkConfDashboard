@@ -231,7 +231,7 @@
       <title>Ask ChatGPT about $selected_country_code$.</title>
       <table>
         <search>
-          <query>|openai org="org-KDit7Pt5jh3eHLJcJbzu6rCr" prompt="Tell me about "."$selected_country_code$"." in ".$slider_value$ 
+          <query>|openai org="XXXXX" prompt="Tell me about "."$selected_country_code$"." in ".$slider_value$ 
 | spath input=openai_response
 | table choices{}.message.content
 | rename choices{}.message.content as "ChatGPT Results"</query>
